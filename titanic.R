@@ -203,6 +203,7 @@ df_final = subset(df_final, select=-c(Cabin))
 df_final = subset(df_final, select=-c(Ticket))
 df_final = subset(df_final, select=-c(Name))
 df_final = subset(df_final, select=-c(Embarked))
+df_final = subset(df_final, select=-c(fsize))
 
 # split the dataset back into training data and test data
 trainData <- df_final[1:891,]
@@ -214,10 +215,10 @@ library(caret)
 library(e1071)
 set.seed(101)
 
-tuned = tune.svm(Survived~., data = trainData, gamma = seq(0.01,0.1,0.02), cost = seq(0.1,1,0.1))
+tuned = tune.svm(Survived~., data = trainData, gamma = seq(.1,0.5,0.1), cost = seq(1,60,10))
 tuned$best.parameters
 #model = train(Survived~., data=trainData, method="svmRadial", preProc=c("BoxCox"), trControl=trainControl((method = "boot")))
-model <- svm(Survived~., data = trainData, gamma = 0.01, cost = 0.07, type = "C-classification")
+model <- svm(Survived~., data = trainData, gamma = 0.1, cost = 1, type = "C-classification")
 
 summary(model)
 
@@ -234,5 +235,8 @@ testData = read.csv("test.csv", header = T)
 myResults = cbind(testData, fitted.results)
 
 # writing the results back into the file
-write.csv(myResults,file = "myResults9.csv")
+write.csv(myResults,file = "myResults8.csv")
+
+
+
 
