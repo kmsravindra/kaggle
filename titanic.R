@@ -64,6 +64,7 @@ sum(is.na(df))
 unique(df$Survived)
 table(df$Survived)
 
+
 #df_omitNA = na.omit(df)
 #rm(df_omitNA)
 #summary(df)
@@ -110,6 +111,24 @@ df$titlesMiss = as.factor(as.character(df$titlesMiss))
 df$titlesMr = as.factor(as.character(df$titlesMr))
 df$titlesMrs = as.factor(as.character(df$titlesMrs))
 str(df)
+
+#familysize
+
+fsize = df$SibSp + df$Parch + 1
+df = cbind(df,fsize)
+table(df$fsize)
+
+fsizeD = rep(1,nrow(df))
+df = cbind(df,fsizeD)
+df$fsizeD[df$fsize == 1] = 1
+df$fsizeD[df$fsize > 1 & df$fsize <= 4 ] = 2
+df$fsizeD[df$fsize > 4] = 3
+table(df$fsizeD)
+
+fSizeVars = dummy(df$fsizeD)
+df = cbind(df,fSizeVars)
+df  = subset(df, select=-c(fsizeD))
+
 
 # Here we are extracting the cabin class information. If its not present assign "U" for unknown
 classInfo = sapply(df$Cabin, function(x) {
@@ -193,15 +212,18 @@ test <- df_final[892:1309,]
 #model <- glm(Survived ~.,family=binomial(link='logit'),data=train)
 library(caret)
 library(e1071)
+set.seed(101)
+
+tuned = tune.svm(Survived~., data = trainData, gamma = seq(0.01,0.1,0.02), cost = seq(0.1,1,0.1))
+tuned$best.parameters
 #model = train(Survived~., data=trainData, method="svmRadial", preProc=c("BoxCox"), trControl=trainControl((method = "boot")))
-model <- svm(Survived ~ ., data = trainData)
+model <- svm(Survived~., data = trainData, gamma = 0.01, cost = 0.07, type = "C-classification")
 
 summary(model)
 
 # getting the results from the predicted model
 
 fitted.results <- predict(model,newdata=test,type='response')
-fitted.results <- ifelse(fitted.results > 0.5,1,0)
 
 fitted.results = as.vector(fitted.results)
 
@@ -212,20 +234,5 @@ testData = read.csv("test.csv", header = T)
 myResults = cbind(testData, fitted.results)
 
 # writing the results back into the file
-write.csv(myResults,file = "myResults6.csv")
-
-
-misClasificError <- mean(fitted.results != test$Survived)
-print(paste('Accuracy',1-misClasificError))
-
-library(gplots)
-library(ROCR)
-p <- predict(model, newdata=test, type="response")
-pr <- prediction(p, test$Survived)
-prf <- performance(pr, measure = "tpr", x.measure = "fpr")
-plot(prf)
-
-auc <- performance(pr, measure = "auc")
-auc <- auc@y.values[[1]]
-auc
+write.csv(myResults,file = "myResults9.csv")
 
